@@ -3,11 +3,15 @@ import pytest
 
 from ea_fc_cm_recommender.preprocessing import (
     EXCLUDED_COLUMNS,
+    TEXT_COLUMNS,
+    _require_columns,
     add_free_agent_status,
     add_goalkeeper_status,
+    add_league_identity,
     add_loan_status,
     add_player_status_flags,
     drop_unused_columns,
+    normalize_text_columns,
     normalize_whitespace,
 )
 
@@ -58,6 +62,120 @@ def test_normalize_whitespace_does_not_modify_input():
     pd.testing.assert_series_equal(values, original)
 
 
+def test_normalize_text_columns_cleans_selected_columns():
+    players = pd.DataFrame(
+        {
+            **{
+                column: ["  Example\u00a0  Value  "]
+                for column in TEXT_COLUMNS
+            },
+            "player_id": [1],
+        }
+    )
+
+    result = normalize_text_columns(players)
+
+    for column in TEXT_COLUMNS:
+        assert result.at[0, column] == "Example Value"
+        assert result[column].dtype == pd.StringDtype()
+    assert result.at[0, "player_id"] == 1
+
+
+def test_normalize_text_columns_preserves_missing_values_and_input():
+    players = pd.DataFrame(
+        {column: [None] for column in TEXT_COLUMNS}
+    )
+    original = players.copy()
+
+    result = normalize_text_columns(players)
+
+    assert result[list(TEXT_COLUMNS)].isna().all().all()
+    pd.testing.assert_frame_equal(players, original)
+
+
+def test_normalize_text_columns_rejects_incomplete_source_schema():
+    players = pd.DataFrame(
+        {column: ["value"] for column in TEXT_COLUMNS if column != "body_type"}
+    )
+
+    with pytest.raises(ValueError, match="Required columns are missing"):
+        normalize_text_columns(players)
+
+
+def test_require_columns_reports_all_missing_columns():
+    players = pd.DataFrame({"player_id": [1]})
+
+    with pytest.raises(
+        ValueError,
+        match=r"Required columns are missing: \['club_name', 'league_name'\]",
+    ):
+        _require_columns(players, ("player_id", "club_name", "league_name"))
+
+
+def test_add_league_identity_adds_country_first_display_names():
+    players = pd.DataFrame(
+        {
+            "league_id": [13, 332, 350, None],
+            "league_name": [
+                "Premier League",
+                "Premier League",
+                "Pro League",
+                None,
+            ],
+        }
+    )
+    original = players.copy()
+
+    result = add_league_identity(players)
+
+    assert result["league_country"].iloc[:3].tolist() == [
+        "England",
+        "Ukraine",
+        "Saudi Arabia",
+    ]
+    assert result["league_display_name"].iloc[:3].tolist() == [
+        "England — Premier League",
+        "Ukraine — Premier League",
+        "Saudi Arabia — Pro League",
+    ]
+    assert pd.isna(result.at[3, "league_country"])
+    assert pd.isna(result.at[3, "league_display_name"])
+    pd.testing.assert_frame_equal(players, original)
+
+
+@pytest.mark.parametrize(
+    ("league_id", "league_name"),
+    [(13, None), (None, "Premier League")],
+)
+def test_add_league_identity_rejects_partially_missing_identity(
+    league_id, league_name
+):
+    players = pd.DataFrame(
+        {"league_id": [league_id], "league_name": [league_name]}
+    )
+
+    with pytest.raises(ValueError, match="must be missing together"):
+        add_league_identity(players)
+
+
+def test_add_league_identity_rejects_unknown_identifier():
+    players = pd.DataFrame(
+        {"league_id": [999999], "league_name": ["Unknown League"]}
+    )
+
+    with pytest.raises(ValueError, match=r"Unknown league_id values: \[999999\]"):
+        add_league_identity(players)
+
+
+def test_add_league_identity_rejects_noninteger_identifier():
+    players = pd.DataFrame(
+        {"league_id": [13.5], "league_name": ["Premier League"]}
+    )
+
+    with pytest.raises(ValueError, match="non-integer values"):
+        add_league_identity(players)
+
+
 def test_drop_unused_columns_removes_only_excluded_columns():
     players = pd.DataFrame(
         {
@@ -92,7 +210,7 @@ def test_drop_unused_columns_does_not_modify_input():
 def test_drop_unused_columns_rejects_incomplete_source_schema():
     players = pd.DataFrame({"work_rate": [None]})
 
-    with pytest.raises(ValueError, match="Expected columns are missing"):
+    with pytest.raises(ValueError, match="Required columns are missing"):
         drop_unused_columns(players)
 
 

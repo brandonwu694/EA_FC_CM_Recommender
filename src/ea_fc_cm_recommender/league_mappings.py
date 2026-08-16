@@ -3,6 +3,8 @@
 from collections.abc import Mapping
 
 
+LEAGUE_DISPLAY_SEPARATOR = " — "
+
 # Countries identify the league system, not every participating club's location.
 LEAGUE_COUNTRY_BY_ID: Mapping[int, str] = {
     1: "Denmark",
@@ -69,4 +71,8 @@ def get_league_country(league_id: int) -> str:
 
 def format_league_display_name(league_id: int, league_name: str) -> str:
     """Build a country-qualified league display name."""
-    return f"{get_league_country(league_id)} — {league_name}"
+    return (
+        f"{get_league_country(league_id)}"
+        f"{LEAGUE_DISPLAY_SEPARATOR}"
+        f"{league_name}"
+    )
