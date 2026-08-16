@@ -225,6 +225,11 @@ preprocessing workflow, creates the output directory when needed, and writes an
 indexed-free Snappy-compressed Parquet file through PyArrow. The output path
 must use the `.parquet` extension.
 
+The thin `scripts/build_processed_data.py` entry point parses required input and
+output paths, calls `build_processed_dataset()`, prints the generated path on
+success, and returns a nonzero exit code for expected loading, validation, or
+filesystem failures. It contains no transformation logic.
+
 ## Structural Missingness
 
 Missing values are not automatically treated as data errors.
@@ -291,14 +296,18 @@ validation.py
 Schema constants are not runtime configuration. A future `config.py` should be
 reserved for paths, logging, or environment-specific settings.
 
-## Remaining Phase 1 Work
+## Running Phase 1
 
-The reusable end-to-end preprocessing workflow is implemented and tested.
-Remaining work includes:
+From the project root, run:
 
-1. Add a command-line entry point under `scripts/`.
-2. Run and document the command that creates the reproducible dataset under
-   `data/processed/`.
+```bash
+PYTHONPATH=src python -m scripts.build_processed_data \
+  --input data/raw/FC26_20250921.csv \
+  --output data/processed/FC26_20250921.parquet
+```
+
+The generated file is intentionally ignored by Git and can be reproduced from
+the immutable raw snapshot.
 
 ## Tests
 

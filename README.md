@@ -38,10 +38,11 @@ Implemented preprocessing components include:
 - explicit removal of agreed unused source columns
 - raw and processed data-contract validation
 - validated raw-to-processed pipeline with Parquet output
+- command-line processed-data build entry point
 - focused unit tests for each transformation and validation rule
 
-The reusable raw-to-processed pipeline is implemented. A command-line entry
-point for running it from `scripts/` remains under development.
+The reusable raw-to-processed pipeline and command-line entry point are
+implemented.
 
 See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
 assumptions and implementation status. The broader roadmap remains in
@@ -55,6 +56,8 @@ data/
 └── processed/
 notebooks/
 └── fc26_player_eda.ipynb
+scripts/
+└── build_processed_data.py
 src/
 └── ea_fc_cm_recommender/
     ├── league_mappings.py
@@ -64,6 +67,7 @@ src/
     ├── schema.py
     └── validation.py
 tests/
+├── test_build_processed_data.py
 ├── test_league_mappings.py
 ├── test_loading.py
 ├── test_pipeline.py
@@ -79,6 +83,22 @@ tests/
 - `pipeline.py` orchestrates validation, transformations, and Parquet output.
 - `preprocessing.py` contains reusable, stateless transformations.
 - `validation.py` enforces raw and processed data contracts.
+
+## Building the Processed Dataset
+
+Run the build command from the project root with the project environment
+active:
+
+```bash
+PYTHONPATH=src python -m scripts.build_processed_data \
+  --input data/raw/FC26_20250921.csv \
+  --output data/processed/FC26_20250921.parquet
+```
+
+The command validates the raw data, applies the complete preprocessing
+pipeline, validates the 78-column result, and writes an index-free,
+Snappy-compressed Parquet file. Generated processed data is ignored by Git and
+can be reproduced from the raw snapshot and code.
 
 ## Running Tests
 
