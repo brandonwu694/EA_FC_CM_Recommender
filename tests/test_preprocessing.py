@@ -12,8 +12,10 @@ from ea_fc_cm_recommender.preprocessing import (
     normalize_text_columns,
     normalize_whitespace,
     split_player_positions,
+    standardize_date_columns,
 )
 from ea_fc_cm_recommender.schema import (
+    DATE_COLUMNS,
     EXCLUDED_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
@@ -114,6 +116,57 @@ def test_require_columns_reports_all_missing_columns():
         match=r"Required columns are missing: \['club_name', 'league_name'\]",
     ):
         _require_columns(players, ("player_id", "club_name", "league_name"))
+
+
+def test_standardize_date_columns_converts_dates_and_preserves_missing_values():
+    players = pd.DataFrame(
+        {
+            "fifa_update_date": ["2025-09-19", "2025-09-19"],
+            "dob": ["2003-06-29", "1998-07-22"],
+            "club_joined_date": ["2023-07-01", None],
+            "player_id": [252371, 239053],
+        }
+    )
+    original = players.copy()
+
+    result = standardize_date_columns(players)
+
+    for column in DATE_COLUMNS:
+        assert pd.api.types.is_datetime64_any_dtype(result[column])
+    assert result.at[0, "fifa_update_date"] == pd.Timestamp("2025-09-19")
+    assert result.at[0, "dob"] == pd.Timestamp("2003-06-29")
+    assert result.at[0, "club_joined_date"] == pd.Timestamp("2023-07-01")
+    assert pd.isna(result.at[1, "club_joined_date"])
+    assert result["player_id"].equals(players["player_id"])
+    pd.testing.assert_frame_equal(players, original)
+
+
+def test_standardize_date_columns_rejects_malformed_dates():
+    players = pd.DataFrame(
+        {
+            "fifa_update_date": ["2025-09-19"],
+            "dob": ["not-a-date"],
+            "club_joined_date": ["2023-07-01"],
+        }
+    )
+
+    with pytest.raises(ValueError):
+        standardize_date_columns(players)
+
+
+def test_standardize_date_columns_rejects_incomplete_source_schema():
+    players = pd.DataFrame(
+        {
+            "fifa_update_date": ["2025-09-19"],
+            "dob": ["2003-06-29"],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"Required columns are missing: \['club_joined_date'\]",
+    ):
+        standardize_date_columns(players)
 
 
 def test_split_player_positions_preserves_order_and_original_column():

@@ -25,6 +25,12 @@ TEXT_COLUMNS: Final[tuple[str, ...]] = (
     "body_type",
 )
 
+DATE_COLUMNS: Final[tuple[str, ...]] = (
+    "fifa_update_date",
+    "dob",
+    "club_joined_date",
+)
+
 VALID_PLAYER_POSITIONS: Final[frozenset[str]] = frozenset(
     {
         "GK",

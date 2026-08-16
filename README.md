@@ -31,12 +31,13 @@ Implemented preprocessing components include:
 - country-qualified league identities
 - loan, goalkeeper, and free-agent status flags
 - primary and secondary position parsing
+- strict date standardization
 - explicit removal of agreed unused source columns
 - focused validation and unit tests for each transformation
 
 The transformations are not yet connected through a complete raw-to-processed
-pipeline. PlayStyle parsing, dtype standardization, the final processed schema,
-full validation, and Parquet output remain under development.
+pipeline. PlayStyle parsing, remaining dtype standardization, the final
+processed schema, full validation, and Parquet output remain under development.
 
 See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
 assumptions and implementation status. The broader roadmap remains in

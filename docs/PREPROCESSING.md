@@ -41,6 +41,22 @@ dataset under `data/processed/`.
 The selected text columns are defined in `schema.py`. The function intentionally
 does not casefold, remove accents, or rewrite category labels.
 
+### Date Standardization
+
+The source date columns are defined by `DATE_COLUMNS` in `schema.py`:
+
+```text
+fifa_update_date
+dob
+club_joined_date
+```
+
+`standardize_date_columns()` parses these fields strictly as `YYYY-MM-DD` and
+returns pandas datetime columns. Missing values remain `NaT`; malformed values
+raise an error rather than being silently coerced. In the current snapshot,
+only `club_joined_date` is nullable, with 1,414 structurally missing values for
+loaned players and free agents.
+
 ### League Identity
 
 The raw dataset contains `league_id`, `league_name`, and `league_level`, but no
@@ -196,7 +212,7 @@ The current functions are tested individually but are not yet connected through
 an end-to-end preprocessing workflow. Remaining work includes:
 
 1. Parse `player_traits` into a PlayStyle list.
-2. Standardize numeric, Boolean, and date dtypes.
+2. Standardize the remaining numeric and Boolean dtypes.
 3. Define the final processed-column allowlist.
 4. Add identifier, range, structural-null, and schema validation.
 5. Implement raw-data loading and transformation orchestration.

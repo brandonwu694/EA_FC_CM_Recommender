@@ -9,6 +9,7 @@ from ea_fc_cm_recommender.league_mappings import (
     LEAGUE_DISPLAY_SEPARATOR,
 )
 from ea_fc_cm_recommender.schema import (
+    DATE_COLUMNS,
     EXCLUDED_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
@@ -46,6 +47,21 @@ def normalize_text_columns(players: pd.DataFrame) -> pd.DataFrame:
         for column in TEXT_COLUMNS
     }
     return players.assign(**normalized_columns)
+
+
+def standardize_date_columns(players: pd.DataFrame) -> pd.DataFrame:
+    """Convert source date columns to pandas datetime values."""
+    _require_columns(players, DATE_COLUMNS)
+
+    converted_dates = {
+        column: pd.to_datetime(
+            players[column],
+            format="%Y-%m-%d",
+            errors="raise",
+        )
+        for column in DATE_COLUMNS
+    }
+    return players.assign(**converted_dates)
 
 
 def split_player_positions(players: pd.DataFrame) -> pd.DataFrame:
