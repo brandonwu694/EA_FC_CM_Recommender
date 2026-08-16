@@ -36,10 +36,11 @@ Implemented preprocessing components include:
 - explicit required and nullable integer dtypes
 - an ordered final processed-column allowlist
 - explicit removal of agreed unused source columns
-- focused validation and unit tests for each transformation
+- raw and processed data-contract validation
+- focused unit tests for each transformation and validation rule
 
 The transformations are not yet connected through a complete raw-to-processed
-pipeline. Full validation and Parquet output remain under development.
+pipeline. Pipeline orchestration and Parquet output remain under development.
 
 See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
 assumptions and implementation status. The broader roadmap remains in
@@ -58,11 +59,13 @@ src/
     ├── league_mappings.py
     ├── loading.py
     ├── preprocessing.py
-    └── schema.py
+    ├── schema.py
+    └── validation.py
 tests/
 ├── test_league_mappings.py
 ├── test_loading.py
-└── test_preprocessing.py
+├── test_preprocessing.py
+└── test_validation.py
 ```
 
 - `data/raw/` contains source data and must not be modified in place.
@@ -71,6 +74,7 @@ tests/
 - `league_mappings.py` contains league reference data.
 - `loading.py` loads raw data from explicit filesystem paths.
 - `preprocessing.py` contains reusable, stateless transformations.
+- `validation.py` enforces raw and processed data contracts.
 
 ## Running Tests
 

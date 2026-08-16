@@ -1,7 +1,5 @@
 """Reusable transformations for raw player data."""
 
-from collections.abc import Iterable
-
 import pandas as pd
 
 from ea_fc_cm_recommender.league_mappings import (
@@ -18,18 +16,7 @@ from ea_fc_cm_recommender.schema import (
     VALID_PLAYER_POSITIONS,
     VALID_PLAYSTYLE_NAMES,
 )
-
-
-def _require_columns(
-    players: pd.DataFrame,
-    required_columns: Iterable[str],
-) -> None:
-    """Validate that a dataframe contains the required columns."""
-    missing_columns = [
-        column for column in required_columns if column not in players.columns
-    ]
-    if missing_columns:
-        raise ValueError(f"Required columns are missing: {missing_columns}")
+from ea_fc_cm_recommender.validation import require_columns as _require_columns
 
 
 def normalize_whitespace(series: pd.Series) -> pd.Series:

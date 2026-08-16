@@ -200,6 +200,19 @@ detailed attributes remain available for later recommendation phases.
 Using an allowlist prevents new source columns from silently entering the
 processed dataset and fixes the Parquet column order across repeated runs.
 
+### Validation
+
+`validate_raw_players()` checks the input schema, snapshot fields, and player
+identifiers before transformation. `validate_processed_players()` enforces the
+ordered output schema, dtypes, identifiers, category consistency, value ranges,
+position and PlayStyle collections, dates, and documented structural-null
+relationships. `validate_preserved_row_count()` ensures preprocessing neither
+adds nor removes players.
+
+Validators do not clean or impute values. They return `None` when every rule
+passes and raise an informative `ValueError` when a data contract is violated.
+The current 18,405-row snapshot passes both raw and processed validation.
+
 ## Structural Missingness
 
 Missing values are not automatically treated as data errors.
@@ -245,7 +258,7 @@ Responsibilities are separated as follows:
 
 ```text
 schema.py
-    Schema-policy constants and, later, processed columns and dtype contracts.
+    Schema-policy constants, processed columns, and dtype contracts.
 
 league_mappings.py
     League ID reference data and display formatting.
@@ -257,7 +270,7 @@ preprocessing.py
     Stateless dataframe transformations.
 
 validation.py
-    Planned processed-data and structural-null validation.
+    Raw and processed schema, range, and structural-null validation.
 ```
 
 Schema constants are not runtime configuration. A future `config.py` should be
@@ -268,9 +281,8 @@ reserved for paths, logging, or environment-specific settings.
 The current functions are tested individually but are not yet connected through
 an end-to-end preprocessing workflow. Remaining work includes:
 
-1. Add identifier, range, structural-null, and schema validation.
-2. Implement raw-data loading and transformation orchestration.
-3. Write and verify a reproducible Parquet dataset under `data/processed/`.
+1. Implement raw-data loading and transformation orchestration.
+2. Write and verify a reproducible Parquet dataset under `data/processed/`.
 
 ## Tests
 

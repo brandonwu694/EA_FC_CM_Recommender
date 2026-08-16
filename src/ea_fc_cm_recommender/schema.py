@@ -98,6 +98,15 @@ NULLABLE_INTEGER_COLUMNS: Final[tuple[str, ...]] = (
     "goalkeeping_speed",
 )
 
+OUTFIELD_SUMMARY_COLUMNS: Final[tuple[str, ...]] = (
+    "pace",
+    "shooting",
+    "passing",
+    "dribbling",
+    "defending",
+    "physic",
+)
+
 BOOLEAN_COLUMNS: Final[tuple[str, ...]] = (
     "is_on_loan",
     "is_goalkeeper",
@@ -150,6 +159,44 @@ PROCESSED_PLAYER_COLUMNS: Final[tuple[str, ...]] = (
     *DETAILED_ATTRIBUTE_COLUMNS,
 )
 
+PROCESSED_STRING_COLUMNS: Final[tuple[str, ...]] = (
+    "short_name",
+    "long_name",
+    "nationality_name",
+    "club_name",
+    "club_position",
+    "league_name",
+    "league_country",
+    "league_display_name",
+    "primary_position",
+    "preferred_foot",
+)
+
+PROCESSED_LIST_COLUMNS: Final[tuple[str, ...]] = (
+    "secondary_positions",
+    "playstyles",
+)
+
+DERIVED_PLAYER_COLUMNS: Final[tuple[str, ...]] = (
+    "league_country",
+    "league_display_name",
+    "primary_position",
+    "secondary_positions",
+    "playstyles",
+    *BOOLEAN_COLUMNS,
+)
+
+RAW_REQUIRED_COLUMNS: Final[tuple[str, ...]] = (
+    *(
+        column
+        for column in PROCESSED_PLAYER_COLUMNS
+        if column not in DERIVED_PLAYER_COLUMNS
+    ),
+    "player_positions",
+    "player_traits",
+    "club_loaned_from",
+)
+
 VALID_PLAYSTYLE_NAMES: Final[frozenset[str]] = frozenset(
     {
         "Acrobatic",
@@ -190,6 +237,8 @@ VALID_PLAYSTYLE_NAMES: Final[frozenset[str]] = frozenset(
         "Whipped Pass",
     }
 )
+
+VALID_PREFERRED_FEET: Final[frozenset[str]] = frozenset({"Left", "Right"})
 
 VALID_PLAYER_POSITIONS: Final[frozenset[str]] = frozenset(
     {
