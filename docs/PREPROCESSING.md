@@ -57,6 +57,24 @@ raise an error rather than being silently coerced. In the current snapshot,
 only `club_joined_date` is nullable, with 1,414 structurally missing values for
 loaned players and free agents.
 
+### Numeric Standardization
+
+`standardize_integer_columns()` converts retained numeric fields without
+silently truncating fractional values. Complete fields use NumPy `int64`, while
+structurally nullable fields use pandas `Int64` so missing values remain
+`pd.NA` rather than forcing the entire column to floating point.
+
+Required integers include player and snapshot identifiers, OVR, potential, age,
+value, wage, physical measurements, nationality ID, profile ratings, and the
+detailed player attributes needed for later role-fit scoring. Nullable integers
+include club and league identifiers, league level, contract year, release
+clause, outfield summary attributes, and goalkeeper speed.
+
+Jersey numbers are not part of the retained numeric contract because they do
+not contribute to recommendation logic. Previously agreed deprecated or
+national-team fields remain excluded. Derived status flags are already emitted
+as non-nullable Boolean columns by their respective transformations.
+
 ### League Identity
 
 The raw dataset contains `league_id`, `league_name`, and `league_level`, but no
@@ -181,9 +199,16 @@ source-data rule and should not be imputed.
 
 ### PlayStyles
 
-The source `player_traits` field contains PlayStyles. Missing values are expected
-to become an empty PlayStyle collection, but parsing has not yet been
-implemented. `+` variants must remain distinguishable from their base names.
+`parse_playstyles()` converts the comma-delimited `player_traits` source field
+into the list-valued `playstyles` field. It normalizes whitespace, preserves
+source order and capitalization, and changes the source's `"PlayStyle +"`
+notation to `"PlayStyle+"`. Missing or blank source values become empty lists.
+
+Each value is validated by removing an optional trailing `+` and comparing the
+base name with `VALID_PLAYSTYLE_NAMES` in `schema.py`. This detects unexpected
+categories without silently rewriting their names. Empty and duplicate tokens
+are treated as data-quality errors. The raw `player_traits` field remains
+available until the final processed-column allowlist is applied.
 
 ## Schema Organization
 
@@ -211,12 +236,10 @@ reserved for paths, logging, or environment-specific settings.
 The current functions are tested individually but are not yet connected through
 an end-to-end preprocessing workflow. Remaining work includes:
 
-1. Parse `player_traits` into a PlayStyle list.
-2. Standardize the remaining numeric and Boolean dtypes.
-3. Define the final processed-column allowlist.
-4. Add identifier, range, structural-null, and schema validation.
-5. Implement raw-data loading and transformation orchestration.
-6. Write and verify a reproducible Parquet dataset under `data/processed/`.
+1. Define the final processed-column allowlist.
+2. Add identifier, range, structural-null, and schema validation.
+3. Implement raw-data loading and transformation orchestration.
+4. Write and verify a reproducible Parquet dataset under `data/processed/`.
 
 ## Tests
 

@@ -11,14 +11,20 @@ from ea_fc_cm_recommender.preprocessing import (
     drop_unused_columns,
     normalize_text_columns,
     normalize_whitespace,
+    parse_playstyles,
     split_player_positions,
     standardize_date_columns,
+    standardize_integer_columns,
 )
 from ea_fc_cm_recommender.schema import (
     DATE_COLUMNS,
+    DETAILED_ATTRIBUTE_COLUMNS,
     EXCLUDED_COLUMNS,
+    NULLABLE_INTEGER_COLUMNS,
+    REQUIRED_INTEGER_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
+    VALID_PLAYSTYLE_NAMES,
 )
 
 
@@ -169,6 +175,76 @@ def test_standardize_date_columns_rejects_incomplete_source_schema():
         standardize_date_columns(players)
 
 
+def _integer_players() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            **{column: ["1", "2"] for column in REQUIRED_INTEGER_COLUMNS},
+            **{
+                column: ["1.0", None]
+                for column in NULLABLE_INTEGER_COLUMNS
+            },
+            "short_name": ["Player One", "Player Two"],
+        }
+    )
+
+
+def test_standardize_integer_columns_applies_dtype_contract():
+    players = _integer_players()
+    original = players.copy()
+
+    result = standardize_integer_columns(players)
+
+    assert all(
+        result[column].dtype == "int64"
+        for column in REQUIRED_INTEGER_COLUMNS
+    )
+    assert all(
+        result[column].dtype == "Int64"
+        for column in NULLABLE_INTEGER_COLUMNS
+    )
+    assert result["short_name"].equals(players["short_name"])
+    assert pd.isna(result.at[1, "release_clause_eur"])
+    pd.testing.assert_frame_equal(players, original)
+
+
+def test_standardize_integer_columns_rejects_missing_required_values():
+    players = _integer_players()
+    players.at[0, "overall"] = None
+
+    with pytest.raises(ValueError, match="overall contains missing values"):
+        standardize_integer_columns(players)
+
+
+def test_standardize_integer_columns_rejects_fractional_values():
+    players = _integer_players()
+    players.at[0, "value_eur"] = "10.5"
+
+    with pytest.raises(ValueError, match="value_eur contains non-integer values"):
+        standardize_integer_columns(players)
+
+
+def test_standardize_integer_columns_rejects_non_numeric_values():
+    players = _integer_players()
+    players.at[0, "wage_eur"] = "unknown"
+
+    with pytest.raises(ValueError, match="wage_eur contains non-numeric values"):
+        standardize_integer_columns(players)
+
+
+def test_standardize_integer_columns_rejects_incomplete_source_schema():
+    players = _integer_players().drop(columns="goalkeeping_speed")
+
+    with pytest.raises(
+        ValueError,
+        match=r"Required columns are missing: \['goalkeeping_speed'\]",
+    ):
+        standardize_integer_columns(players)
+
+
+def test_detailed_attributes_are_required_integer_columns():
+    assert set(DETAILED_ATTRIBUTE_COLUMNS).issubset(REQUIRED_INTEGER_COLUMNS)
+
+
 def test_split_player_positions_preserves_order_and_original_column():
     players = pd.DataFrame(
         {"player_positions": ["RB, RM", "CM,CDM,CAM", "GK"]}
@@ -244,6 +320,70 @@ def test_valid_player_positions_match_current_supported_schema():
         "CF",
         "ST",
     }
+
+
+def test_parse_playstyles_normalizes_plus_and_preserves_names():
+    players = pd.DataFrame(
+        {
+            "player_traits": [
+                " Relentless +,  Low Driven Shot, Tiki Taka ",
+                None,
+                "   ",
+            ],
+            "player_id": [1, 2, 3],
+        }
+    )
+    original = players.copy()
+
+    result = parse_playstyles(players)
+
+    assert result["playstyles"].tolist() == [
+        ["Relentless+", "Low Driven Shot", "Tiki Taka"],
+        [],
+        [],
+    ]
+    assert result["player_id"].tolist() == [1, 2, 3]
+    pd.testing.assert_frame_equal(players, original)
+
+
+def test_parse_playstyles_validates_plus_variant_by_base_name():
+    players = pd.DataFrame({"player_traits": ["Unknown Style +"]})
+
+    with pytest.raises(
+        ValueError,
+        match=r"Unknown PlayStyle names: \['Unknown Style'\]",
+    ):
+        parse_playstyles(players)
+
+
+def test_parse_playstyles_rejects_empty_tokens():
+    players = pd.DataFrame({"player_traits": ["Rapid, , Quick Step"]})
+
+    with pytest.raises(ValueError, match="empty PlayStyle tokens"):
+        parse_playstyles(players)
+
+
+def test_parse_playstyles_rejects_duplicate_tokens():
+    players = pd.DataFrame({"player_traits": ["Rapid, Rapid"]})
+
+    with pytest.raises(ValueError, match="duplicate PlayStyles"):
+        parse_playstyles(players)
+
+
+def test_parse_playstyles_rejects_missing_source_column():
+    players = pd.DataFrame({"player_id": [1]})
+
+    with pytest.raises(
+        ValueError,
+        match=r"Required columns are missing: \['player_traits'\]",
+    ):
+        parse_playstyles(players)
+
+
+def test_valid_playstyle_names_use_canonical_base_names():
+    assert "Relentless" in VALID_PLAYSTYLE_NAMES
+    assert "Relentless+" not in VALID_PLAYSTYLE_NAMES
+    assert "Relentless +" not in VALID_PLAYSTYLE_NAMES
 
 
 def test_add_league_identity_adds_country_first_display_names():

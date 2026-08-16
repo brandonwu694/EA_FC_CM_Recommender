@@ -11,8 +11,11 @@ from ea_fc_cm_recommender.league_mappings import (
 from ea_fc_cm_recommender.schema import (
     DATE_COLUMNS,
     EXCLUDED_COLUMNS,
+    NULLABLE_INTEGER_COLUMNS,
+    REQUIRED_INTEGER_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
+    VALID_PLAYSTYLE_NAMES,
 )
 
 
@@ -64,6 +67,51 @@ def standardize_date_columns(players: pd.DataFrame) -> pd.DataFrame:
     return players.assign(**converted_dates)
 
 
+def _standardize_integer_column(
+    series: pd.Series,
+    *,
+    nullable: bool,
+) -> pd.Series:
+    """Convert one column to an integer dtype without truncating values."""
+    try:
+        numeric_values = pd.to_numeric(series, errors="raise")
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"{series.name} contains non-numeric values"
+        ) from error
+
+    if not nullable and numeric_values.isna().any():
+        raise ValueError(f"{series.name} contains missing values")
+
+    non_integer_values = numeric_values.dropna().mod(1).ne(0)
+    if non_integer_values.any():
+        raise ValueError(f"{series.name} contains non-integer values")
+
+    dtype = "Int64" if nullable else "int64"
+    return numeric_values.astype(dtype)
+
+
+def standardize_integer_columns(players: pd.DataFrame) -> pd.DataFrame:
+    """Standardize retained numeric fields to required or nullable integers."""
+    integer_columns = REQUIRED_INTEGER_COLUMNS + NULLABLE_INTEGER_COLUMNS
+    _require_columns(players, integer_columns)
+
+    converted_columns = {
+        column: _standardize_integer_column(players[column], nullable=False)
+        for column in REQUIRED_INTEGER_COLUMNS
+    }
+    converted_columns.update(
+        {
+            column: _standardize_integer_column(
+                players[column],
+                nullable=True,
+            )
+            for column in NULLABLE_INTEGER_COLUMNS
+        }
+    )
+    return players.assign(**converted_columns)
+
+
 def split_player_positions(players: pd.DataFrame) -> pd.DataFrame:
     """Split ordered player positions into primary and secondary fields."""
     _require_columns(players, ("player_positions",))
@@ -99,6 +147,46 @@ def split_player_positions(players: pd.DataFrame) -> pd.DataFrame:
         primary_position=primary_positions,
         secondary_positions=secondary_positions,
     )
+
+
+def _normalize_playstyle_token(token: str) -> str:
+    """Normalize one PlayStyle token."""
+    token = token.strip()
+    if token.endswith(" +"):
+        return f"{token.removesuffix(' +')}+"
+    return token
+
+
+def parse_playstyles(players: pd.DataFrame) -> pd.DataFrame:
+    """Parse and validate the player's recorded PlayStyles."""
+    _require_columns(players, ("player_traits",))
+
+    trait_values = normalize_whitespace(players["player_traits"])
+    playstyle_lists = trait_values.map(
+        lambda value: []
+        if pd.isna(value) or value == ""
+        else [_normalize_playstyle_token(token) for token in value.split(",")]
+    )
+
+    if playstyle_lists.map(lambda playstyles: "" in playstyles).any():
+        raise ValueError("player_traits contains empty PlayStyle tokens")
+
+    observed_names = {
+        playstyle.removesuffix("+")
+        for playstyles in playstyle_lists
+        for playstyle in playstyles
+    }
+    unknown_names = sorted(observed_names - VALID_PLAYSTYLE_NAMES)
+    if unknown_names:
+        raise ValueError(f"Unknown PlayStyle names: {unknown_names}")
+
+    has_duplicates = playstyle_lists.map(
+        lambda playstyles: len(playstyles) != len(set(playstyles))
+    )
+    if has_duplicates.any():
+        raise ValueError("player_traits contains duplicate PlayStyles")
+
+    return players.assign(playstyles=playstyle_lists)
 
 
 def _validate_league_identity_pair(
