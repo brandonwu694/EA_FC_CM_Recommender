@@ -20,3 +20,59 @@ as the primary source for player ratings, positions, and attributes.
 - Explainable Recommendations: Breaks down why each player is recommended using factors such as squad impact, player quality, role fit, and transfer realism.
 
 ---
+
+## Development Status
+
+The project is currently in **Phase 1: Data Ingestion and Preprocessing**.
+
+Implemented preprocessing components include:
+
+- conservative whitespace normalization for selected text fields
+- country-qualified league identities
+- loan, goalkeeper, and free-agent status flags
+- primary and secondary position parsing
+- explicit removal of agreed unused source columns
+- focused validation and unit tests for each transformation
+
+The transformations are not yet connected through a complete raw-to-processed
+pipeline. PlayStyle parsing, dtype standardization, the final processed schema,
+full validation, and Parquet output remain under development.
+
+See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
+assumptions and implementation status. The broader roadmap remains in
+[Project Plan](docs/PLAN.md).
+
+## Project Structure
+
+```text
+data/
+├── raw/
+└── processed/
+notebooks/
+└── fc26_player_eda.ipynb
+src/
+└── ea_fc_cm_recommender/
+    ├── league_mappings.py
+    ├── preprocessing.py
+    └── schema.py
+tests/
+├── test_league_mappings.py
+└── test_preprocessing.py
+```
+
+- `data/raw/` contains source data and must not be modified in place.
+- `data/processed/` will contain reproducible processed outputs.
+- `schema.py` is the canonical location for schema-policy constants.
+- `league_mappings.py` contains league reference data.
+- `preprocessing.py` contains reusable, stateless transformations.
+
+## Running Tests
+
+From the project root, with the project environment active:
+
+```bash
+pytest
+```
+
+Pytest reads `pytest.ini` so the package under `src/` can be imported without
+manually setting `PYTHONPATH`.
