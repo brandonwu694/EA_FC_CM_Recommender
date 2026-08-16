@@ -28,6 +28,18 @@ dataset under `data/processed/`.
 
 ## Current Transformations
 
+### Raw Data Loading
+
+`load_raw_players()` reads a non-empty CSV from an explicit `Path`. It verifies
+that the path exists, is a file, and has a `.csv` extension before reading it
+with consistent pandas options. Empty files and header-only datasets fail with
+informative errors.
+
+The loader does not search for the project root, choose among files in
+`data/raw/`, clean values, or enforce the FC 26 domain schema. The future
+pipeline supplies the input path, preprocessing performs transformations, and
+validation enforces data assumptions.
+
 ### Whitespace Normalization
 
 `normalize_whitespace()` and `normalize_text_columns()`:
@@ -237,6 +249,9 @@ schema.py
 
 league_mappings.py
     League ID reference data and display formatting.
+
+loading.py
+    Raw CSV loading and basic file-level checks.
 
 preprocessing.py
     Stateless dataframe transformations.

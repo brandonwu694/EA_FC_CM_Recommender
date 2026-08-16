@@ -56,10 +56,12 @@ notebooks/
 src/
 └── ea_fc_cm_recommender/
     ├── league_mappings.py
+    ├── loading.py
     ├── preprocessing.py
     └── schema.py
 tests/
 ├── test_league_mappings.py
+├── test_loading.py
 └── test_preprocessing.py
 ```
 
@@ -67,6 +69,7 @@ tests/
 - `data/processed/` will contain reproducible processed outputs.
 - `schema.py` is the canonical location for schema-policy constants.
 - `league_mappings.py` contains league reference data.
+- `loading.py` loads raw data from explicit filesystem paths.
 - `preprocessing.py` contains reusable, stateless transformations.
 
 ## Running Tests
