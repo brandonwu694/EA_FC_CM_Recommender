@@ -2,8 +2,6 @@ import pandas as pd
 import pytest
 
 from ea_fc_cm_recommender.preprocessing import (
-    EXCLUDED_COLUMNS,
-    TEXT_COLUMNS,
     _require_columns,
     add_free_agent_status,
     add_goalkeeper_status,
@@ -13,6 +11,12 @@ from ea_fc_cm_recommender.preprocessing import (
     drop_unused_columns,
     normalize_text_columns,
     normalize_whitespace,
+    split_player_positions,
+)
+from ea_fc_cm_recommender.schema import (
+    EXCLUDED_COLUMNS,
+    TEXT_COLUMNS,
+    VALID_PLAYER_POSITIONS,
 )
 
 
@@ -110,6 +114,83 @@ def test_require_columns_reports_all_missing_columns():
         match=r"Required columns are missing: \['club_name', 'league_name'\]",
     ):
         _require_columns(players, ("player_id", "club_name", "league_name"))
+
+
+def test_split_player_positions_preserves_order_and_original_column():
+    players = pd.DataFrame(
+        {"player_positions": ["RB, RM", "CM,CDM,CAM", "GK"]}
+    )
+    original = players.copy()
+
+    result = split_player_positions(players)
+
+    assert result["primary_position"].tolist() == ["RB", "CM", "GK"]
+    assert result["secondary_positions"].tolist() == [
+        ["RM"],
+        ["CDM", "CAM"],
+        [],
+    ]
+    assert result["primary_position"].dtype == pd.StringDtype()
+    pd.testing.assert_frame_equal(players, original)
+
+
+@pytest.mark.parametrize("value", [None, "", "   "])
+def test_split_player_positions_rejects_missing_or_empty_values(value):
+    players = pd.DataFrame({"player_positions": [value]})
+
+    with pytest.raises(ValueError, match="missing or empty values"):
+        split_player_positions(players)
+
+
+def test_split_player_positions_rejects_empty_tokens():
+    players = pd.DataFrame({"player_positions": ["RB, , RM"]})
+
+    with pytest.raises(ValueError, match="empty position tokens"):
+        split_player_positions(players)
+
+
+def test_split_player_positions_rejects_unknown_tokens():
+    players = pd.DataFrame({"player_positions": ["RB, UNKNOWN"]})
+
+    with pytest.raises(ValueError, match=r"Unknown player positions: \['UNKNOWN'\]"):
+        split_player_positions(players)
+
+
+def test_split_player_positions_rejects_duplicate_tokens():
+    players = pd.DataFrame({"player_positions": ["CM, CDM, CM"]})
+
+    with pytest.raises(ValueError, match="duplicate positions"):
+        split_player_positions(players)
+
+
+@pytest.mark.parametrize("position", ["RWB", "LWB", "CF"])
+def test_split_player_positions_accepts_supported_unobserved_positions(position):
+    players = pd.DataFrame({"player_positions": [position]})
+
+    result = split_player_positions(players)
+
+    assert result.at[0, "primary_position"] == position
+    assert result.at[0, "secondary_positions"] == []
+
+
+def test_valid_player_positions_match_current_supported_schema():
+    assert VALID_PLAYER_POSITIONS == {
+        "GK",
+        "RB",
+        "RWB",
+        "CB",
+        "LB",
+        "LWB",
+        "CDM",
+        "CM",
+        "CAM",
+        "RM",
+        "LM",
+        "RW",
+        "LW",
+        "CF",
+        "ST",
+    }
 
 
 def test_add_league_identity_adds_country_first_display_names():

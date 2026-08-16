@@ -8,28 +8,10 @@ from ea_fc_cm_recommender.league_mappings import (
     LEAGUE_COUNTRY_BY_ID,
     LEAGUE_DISPLAY_SEPARATOR,
 )
-
-
-EXCLUDED_COLUMNS = (
-    "work_rate",
-    "nation_team_id",
-    "nation_position",
-    "nation_jersey_number",
-    "player_tags",
-    "club_loaned_from",
-)
-
-TEXT_COLUMNS = (
-    "short_name",
-    "long_name",
-    "club_name",
-    "league_name",
-    "nationality_name",
-    "club_position",
-    "player_positions",
-    "player_traits",
-    "preferred_foot",
-    "body_type",
+from ea_fc_cm_recommender.schema import (
+    EXCLUDED_COLUMNS,
+    TEXT_COLUMNS,
+    VALID_PLAYER_POSITIONS,
 )
 
 
@@ -64,6 +46,43 @@ def normalize_text_columns(players: pd.DataFrame) -> pd.DataFrame:
         for column in TEXT_COLUMNS
     }
     return players.assign(**normalized_columns)
+
+
+def split_player_positions(players: pd.DataFrame) -> pd.DataFrame:
+    """Split ordered player positions into primary and secondary fields."""
+    _require_columns(players, ("player_positions",))
+
+    position_values = normalize_whitespace(players["player_positions"])
+    if position_values.isna().any() or position_values.eq("").any():
+        raise ValueError("player_positions contains missing or empty values")
+
+    position_lists = position_values.str.split(",").map(
+        lambda positions: [position.strip() for position in positions]
+    )
+    if position_lists.map(lambda positions: "" in positions).any():
+        raise ValueError("player_positions contains empty position tokens")
+
+    observed_positions = {
+        position
+        for positions in position_lists
+        for position in positions
+    }
+    unknown_positions = sorted(observed_positions - VALID_PLAYER_POSITIONS)
+    if unknown_positions:
+        raise ValueError(f"Unknown player positions: {unknown_positions}")
+
+    has_duplicates = position_lists.map(
+        lambda positions: len(positions) != len(set(positions))
+    )
+    if has_duplicates.any():
+        raise ValueError("player_positions contains duplicate positions")
+
+    primary_positions = position_lists.str[0].astype("string")
+    secondary_positions = position_lists.map(lambda positions: positions[1:])
+    return players.assign(
+        primary_position=primary_positions,
+        secondary_positions=secondary_positions,
+    )
 
 
 def _validate_league_identity_pair(
