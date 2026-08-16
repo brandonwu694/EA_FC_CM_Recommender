@@ -37,10 +37,11 @@ Implemented preprocessing components include:
 - an ordered final processed-column allowlist
 - explicit removal of agreed unused source columns
 - raw and processed data-contract validation
+- validated raw-to-processed pipeline with Parquet output
 - focused unit tests for each transformation and validation rule
 
-The transformations are not yet connected through a complete raw-to-processed
-pipeline. Pipeline orchestration and Parquet output remain under development.
+The reusable raw-to-processed pipeline is implemented. A command-line entry
+point for running it from `scripts/` remains under development.
 
 See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
 assumptions and implementation status. The broader roadmap remains in
@@ -58,12 +59,14 @@ src/
 └── ea_fc_cm_recommender/
     ├── league_mappings.py
     ├── loading.py
+    ├── pipeline.py
     ├── preprocessing.py
     ├── schema.py
     └── validation.py
 tests/
 ├── test_league_mappings.py
 ├── test_loading.py
+├── test_pipeline.py
 ├── test_preprocessing.py
 └── test_validation.py
 ```
@@ -73,6 +76,7 @@ tests/
 - `schema.py` is the canonical location for schema-policy constants.
 - `league_mappings.py` contains league reference data.
 - `loading.py` loads raw data from explicit filesystem paths.
+- `pipeline.py` orchestrates validation, transformations, and Parquet output.
 - `preprocessing.py` contains reusable, stateless transformations.
 - `validation.py` enforces raw and processed data contracts.
 

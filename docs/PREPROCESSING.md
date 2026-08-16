@@ -213,6 +213,18 @@ Validators do not clean or impute values. They return `None` when every rule
 passes and raise an informative `ValueError` when a data contract is violated.
 The current 18,405-row snapshot passes both raw and processed validation.
 
+### End-to-End Pipeline
+
+`preprocess_players()` validates raw data, applies each transformation in an
+explicit order, selects the final schema, verifies row-count preservation, and
+validates the processed result. It returns a new DataFrame and does not modify
+the raw input.
+
+`build_processed_dataset()` loads an explicit raw CSV path, calls the validated
+preprocessing workflow, creates the output directory when needed, and writes an
+indexed-free Snappy-compressed Parquet file through PyArrow. The output path
+must use the `.parquet` extension.
+
 ## Structural Missingness
 
 Missing values are not automatically treated as data errors.
@@ -266,6 +278,9 @@ league_mappings.py
 loading.py
     Raw CSV loading and basic file-level checks.
 
+pipeline.py
+    Validated transformation orchestration and Parquet output.
+
 preprocessing.py
     Stateless dataframe transformations.
 
@@ -278,11 +293,12 @@ reserved for paths, logging, or environment-specific settings.
 
 ## Remaining Phase 1 Work
 
-The current functions are tested individually but are not yet connected through
-an end-to-end preprocessing workflow. Remaining work includes:
+The reusable end-to-end preprocessing workflow is implemented and tested.
+Remaining work includes:
 
-1. Implement raw-data loading and transformation orchestration.
-2. Write and verify a reproducible Parquet dataset under `data/processed/`.
+1. Add a command-line entry point under `scripts/`.
+2. Run and document the command that creates the reproducible dataset under
+   `data/processed/`.
 
 ## Tests
 
