@@ -19,10 +19,7 @@ TEXT_COLUMNS: Final[tuple[str, ...]] = (
     "league_name",
     "nationality_name",
     "club_position",
-    "player_positions",
-    "player_traits",
     "preferred_foot",
-    "body_type",
 )
 
 DATE_COLUMNS: Final[tuple[str, ...]] = (
@@ -99,6 +96,58 @@ NULLABLE_INTEGER_COLUMNS: Final[tuple[str, ...]] = (
     "defending",
     "physic",
     "goalkeeping_speed",
+)
+
+BOOLEAN_COLUMNS: Final[tuple[str, ...]] = (
+    "is_on_loan",
+    "is_goalkeeper",
+    "is_free_agent",
+)
+
+PROCESSED_PLAYER_COLUMNS: Final[tuple[str, ...]] = (
+    "player_id",
+    "fifa_version",
+    "fifa_update",
+    "fifa_update_date",
+    "short_name",
+    "long_name",
+    "age",
+    "dob",
+    "height_cm",
+    "weight_kg",
+    "nationality_id",
+    "nationality_name",
+    "club_team_id",
+    "club_name",
+    "club_position",
+    "club_joined_date",
+    "club_contract_valid_until_year",
+    "league_id",
+    "league_name",
+    "league_level",
+    "league_country",
+    "league_display_name",
+    "primary_position",
+    "secondary_positions",
+    "preferred_foot",
+    "weak_foot",
+    "skill_moves",
+    "international_reputation",
+    "playstyles",
+    *BOOLEAN_COLUMNS,
+    "overall",
+    "potential",
+    "value_eur",
+    "wage_eur",
+    "release_clause_eur",
+    "pace",
+    "shooting",
+    "passing",
+    "dribbling",
+    "defending",
+    "physic",
+    "goalkeeping_speed",
+    *DETAILED_ATTRIBUTE_COLUMNS,
 )
 
 VALID_PLAYSTYLE_NAMES: Final[frozenset[str]] = frozenset(

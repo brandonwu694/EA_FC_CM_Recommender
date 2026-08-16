@@ -12,15 +12,18 @@ from ea_fc_cm_recommender.preprocessing import (
     normalize_text_columns,
     normalize_whitespace,
     parse_playstyles,
+    select_processed_columns,
     split_player_positions,
     standardize_date_columns,
     standardize_integer_columns,
 )
 from ea_fc_cm_recommender.schema import (
+    BOOLEAN_COLUMNS,
     DATE_COLUMNS,
     DETAILED_ATTRIBUTE_COLUMNS,
     EXCLUDED_COLUMNS,
     NULLABLE_INTEGER_COLUMNS,
+    PROCESSED_PLAYER_COLUMNS,
     REQUIRED_INTEGER_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
@@ -107,7 +110,11 @@ def test_normalize_text_columns_preserves_missing_values_and_input():
 
 def test_normalize_text_columns_rejects_incomplete_source_schema():
     players = pd.DataFrame(
-        {column: ["value"] for column in TEXT_COLUMNS if column != "body_type"}
+        {
+            column: ["value"]
+            for column in TEXT_COLUMNS
+            if column != "preferred_foot"
+        }
     )
 
     with pytest.raises(ValueError, match="Required columns are missing"):
@@ -549,3 +556,60 @@ def test_add_player_status_flags_adds_all_indicators():
         "is_goalkeeper": [False, True],
         "is_free_agent": [False, True],
     }
+
+
+def test_select_processed_columns_enforces_columns_and_order():
+    players = pd.DataFrame(
+        {
+            **{column: [column] for column in PROCESSED_PLAYER_COLUMNS},
+            "player_traits": ["Rapid"],
+            "unexpected_source_field": ["ignored"],
+        }
+    )
+    original = players.copy()
+
+    result = select_processed_columns(players)
+
+    assert tuple(result.columns) == PROCESSED_PLAYER_COLUMNS
+    assert "player_traits" not in result.columns
+    assert "unexpected_source_field" not in result.columns
+    pd.testing.assert_frame_equal(players, original)
+
+
+def test_select_processed_columns_rejects_missing_processed_field():
+    players = pd.DataFrame(
+        {
+            column: [column]
+            for column in PROCESSED_PLAYER_COLUMNS
+            if column != "playstyles"
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"Required columns are missing: \['playstyles'\]",
+    ):
+        select_processed_columns(players)
+
+
+def test_processed_player_columns_are_unique():
+    assert len(PROCESSED_PLAYER_COLUMNS) == len(set(PROCESSED_PLAYER_COLUMNS))
+
+
+def test_processed_player_columns_exclude_replaced_and_unused_fields():
+    excluded_output_fields = {
+        *EXCLUDED_COLUMNS,
+        "player_positions",
+        "player_traits",
+        "body_type",
+        "player_url",
+        "player_face_url",
+        "real_face",
+        "club_jersey_number",
+        "ls",
+        "lcm",
+        "rcb",
+    }
+
+    assert excluded_output_fields.isdisjoint(PROCESSED_PLAYER_COLUMNS)
+    assert set(BOOLEAN_COLUMNS).issubset(PROCESSED_PLAYER_COLUMNS)

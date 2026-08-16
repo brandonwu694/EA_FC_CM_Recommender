@@ -171,6 +171,23 @@ The canonical exclusion list is defined in `schema.py`. Current decisions are:
 
 The raw fields remain recoverable from the source CSV.
 
+### Final Processed Schema
+
+`PROCESSED_PLAYER_COLUMNS` in `schema.py` is the authoritative ordered output
+contract. `select_processed_columns()` runs after all derivations, verifies
+that every processed field exists, selects them in a stable order, and ignores
+any other source columns.
+
+The final selection omits raw fields replaced by `primary_position`,
+`secondary_positions`, `playstyles`, and `is_on_loan`. It also omits URLs,
+face metadata, body type, jersey numbers, national-team selection fields, and
+the raw positional-rating strings. Identifiers, snapshot lineage, financial
+fields, club and league context, player profile fields, summary ratings, and
+detailed attributes remain available for later recommendation phases.
+
+Using an allowlist prevents new source columns from silently entering the
+processed dataset and fixes the Parquet column order across repeated runs.
+
 ## Structural Missingness
 
 Missing values are not automatically treated as data errors.
@@ -236,10 +253,9 @@ reserved for paths, logging, or environment-specific settings.
 The current functions are tested individually but are not yet connected through
 an end-to-end preprocessing workflow. Remaining work includes:
 
-1. Define the final processed-column allowlist.
-2. Add identifier, range, structural-null, and schema validation.
-3. Implement raw-data loading and transformation orchestration.
-4. Write and verify a reproducible Parquet dataset under `data/processed/`.
+1. Add identifier, range, structural-null, and schema validation.
+2. Implement raw-data loading and transformation orchestration.
+3. Write and verify a reproducible Parquet dataset under `data/processed/`.
 
 ## Tests
 

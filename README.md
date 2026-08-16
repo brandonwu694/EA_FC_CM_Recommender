@@ -34,12 +34,12 @@ Implemented preprocessing components include:
 - validated PlayStyle parsing
 - strict date standardization
 - explicit required and nullable integer dtypes
+- an ordered final processed-column allowlist
 - explicit removal of agreed unused source columns
 - focused validation and unit tests for each transformation
 
 The transformations are not yet connected through a complete raw-to-processed
-pipeline. The final processed schema, full validation, and Parquet output
-remain under development.
+pipeline. Full validation and Parquet output remain under development.
 
 See [Preprocessing Decisions](docs/PREPROCESSING.md) for the current data
 assumptions and implementation status. The broader roadmap remains in

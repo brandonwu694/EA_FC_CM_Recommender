@@ -12,6 +12,7 @@ from ea_fc_cm_recommender.schema import (
     DATE_COLUMNS,
     EXCLUDED_COLUMNS,
     NULLABLE_INTEGER_COLUMNS,
+    PROCESSED_PLAYER_COLUMNS,
     REQUIRED_INTEGER_COLUMNS,
     TEXT_COLUMNS,
     VALID_PLAYER_POSITIONS,
@@ -278,3 +279,9 @@ def drop_unused_columns(players: pd.DataFrame) -> pd.DataFrame:
         )
 
     return players.drop(columns=list(EXCLUDED_COLUMNS))
+
+
+def select_processed_columns(players: pd.DataFrame) -> pd.DataFrame:
+    """Select and order the final processed player columns."""
+    _require_columns(players, PROCESSED_PLAYER_COLUMNS)
+    return players.loc[:, list(PROCESSED_PLAYER_COLUMNS)].copy()
