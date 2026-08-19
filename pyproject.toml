@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ea-fc-cm-recommender"
+version = "0.1.0"
+description = "Explainable EA FC Career Mode player recommendations."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2,<4",
+    "pyarrow>=15",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipykernel>=6",
+    "jupyterlab>=4",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "pytest>=8",
+    "seaborn>=0.13",
+]
+
+[project.scripts]
+build-processed-data = "ea_fc_cm_recommender.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -225,10 +225,12 @@ preprocessing workflow, creates the output directory when needed, and writes an
 indexed-free Snappy-compressed Parquet file through PyArrow. The output path
 must use the `.parquet` extension.
 
-The thin `scripts/build_processed_data.py` entry point parses required input and
-output paths, calls `build_processed_dataset()`, prints the generated path on
-success, and returns a nonzero exit code for expected loading, validation, or
-filesystem failures. It contains no transformation logic.
+The installed `build-processed-data` command is implemented in package-owned
+`cli.py`. It parses required input and output paths, calls
+`build_processed_dataset()`, prints the generated path on success, and returns
+a nonzero exit code for expected loading, validation, or filesystem failures.
+The `scripts/build_processed_data.py` file remains a compatibility wrapper and
+contains no transformation logic.
 
 ## Structural Missingness
 
@@ -274,6 +276,9 @@ available until the final processed-column allowlist is applied.
 Responsibilities are separated as follows:
 
 ```text
+cli.py
+    Installed command-line argument parsing and user-facing output.
+
 schema.py
     Schema-policy constants, processed columns, and dtype contracts.
 
@@ -301,7 +306,7 @@ reserved for paths, logging, or environment-specific settings.
 From the project root, run:
 
 ```bash
-PYTHONPATH=src python -m scripts.build_processed_data \
+build-processed-data \
   --input data/raw/FC26_20250921.csv \
   --output data/processed/FC26_20250921.parquet
 ```
@@ -318,4 +323,4 @@ pytest
 ```
 
 Synthetic fixtures are preferred for unit tests. Full-snapshot checks may be
-used for integration validation once the complete pipeline exists.
+used selectively for end-to-end integration validation.

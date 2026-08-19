@@ -60,6 +60,7 @@ scripts/
 └── build_processed_data.py
 src/
 └── ea_fc_cm_recommender/
+    ├── cli.py
     ├── league_mappings.py
     ├── loading.py
     ├── pipeline.py
@@ -73,10 +74,13 @@ tests/
 ├── test_pipeline.py
 ├── test_preprocessing.py
 └── test_validation.py
+pyproject.toml
+requirements.txt
 ```
 
 - `data/raw/` contains source data and must not be modified in place.
 - `data/processed/` will contain reproducible processed outputs.
+- `pyproject.toml` defines package metadata, dependencies, and the installed CLI.
 - `schema.py` is the canonical location for schema-policy constants.
 - `league_mappings.py` contains league reference data.
 - `loading.py` loads raw data from explicit filesystem paths.
@@ -84,13 +88,28 @@ tests/
 - `preprocessing.py` contains reusable, stateless transformations.
 - `validation.py` enforces raw and processed data contracts.
 
+## Installation
+
+Create and activate a virtual environment, then install the project and its
+development dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+`pyproject.toml` is the dependency source of truth. `requirements.txt` is a
+development-install shortcut that installs the local package with the `dev`
+extra.
+
 ## Building the Processed Dataset
 
 Run the build command from the project root with the project environment
 active:
 
 ```bash
-PYTHONPATH=src python -m scripts.build_processed_data \
+build-processed-data \
   --input data/raw/FC26_20250921.csv \
   --output data/processed/FC26_20250921.parquet
 ```
@@ -108,5 +127,6 @@ From the project root, with the project environment active:
 pytest
 ```
 
-Pytest reads `pytest.ini` so the package under `src/` can be imported without
+Pytest reads the committed `pytest.ini` configuration. Installing the project
+also makes the package and console command available outside pytest without
 manually setting `PYTHONPATH`.

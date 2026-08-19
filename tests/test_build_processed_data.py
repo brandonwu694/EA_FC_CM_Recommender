@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from scripts import build_processed_data
+from ea_fc_cm_recommender import cli
 
 
 def test_main_calls_pipeline_with_paths(monkeypatch, capsys, tmp_path):
@@ -14,12 +14,12 @@ def test_main_calls_pipeline_with_paths(monkeypatch, capsys, tmp_path):
         return processed_path
 
     monkeypatch.setattr(
-        build_processed_data,
+        cli,
         "build_processed_dataset",
         fake_build,
     )
 
-    exit_code = build_processed_data.main(
+    exit_code = cli.main(
         [
             "--input",
             str(input_path),
@@ -43,12 +43,12 @@ def test_main_reports_expected_build_error(monkeypatch, capsys):
         raise ValueError("invalid processed schema")
 
     monkeypatch.setattr(
-        build_processed_data,
+        cli,
         "build_processed_dataset",
         fake_build,
     )
 
-    exit_code = build_processed_data.main(
+    exit_code = cli.main(
         [
             "--input",
             "players.csv",
@@ -64,7 +64,7 @@ def test_main_reports_expected_build_error(monkeypatch, capsys):
 
 
 def test_parser_converts_arguments_to_paths():
-    args = build_processed_data._build_parser().parse_args(
+    args = cli._build_parser().parse_args(
         [
             "--input",
             "data/raw/players.csv",
