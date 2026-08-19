@@ -240,22 +240,24 @@ VALID_PLAYSTYLE_NAMES: Final[frozenset[str]] = frozenset(
 
 VALID_PREFERRED_FEET: Final[frozenset[str]] = frozenset({"Left", "Right"})
 
+PLAYER_POSITION_ORDER: Final[tuple[str, ...]] = (
+    "GK",
+    "RB",
+    "RWB",
+    "CB",
+    "LB",
+    "LWB",
+    "CDM",
+    "CM",
+    "CAM",
+    "RM",
+    "LM",
+    "RW",
+    "LW",
+    "CF",
+    "ST",
+)
+
 VALID_PLAYER_POSITIONS: Final[frozenset[str]] = frozenset(
-    {
-        "GK",
-        "RB",
-        "RWB",
-        "CB",
-        "LB",
-        "LWB",
-        "CDM",
-        "CM",
-        "CAM",
-        "RM",
-        "LM",
-        "RW",
-        "LW",
-        "CF",
-        "ST",
-    }
+    PLAYER_POSITION_ORDER
 )

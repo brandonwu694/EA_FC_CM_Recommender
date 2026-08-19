@@ -66,6 +66,7 @@ src/
     ├── pipeline.py
     ├── preprocessing.py
     ├── schema.py
+    ├── squad_profiling.py
     └── validation.py
 tests/
 ├── test_build_processed_data.py
@@ -73,6 +74,7 @@ tests/
 ├── test_loading.py
 ├── test_pipeline.py
 ├── test_preprocessing.py
+├── test_squad_profiling.py
 └── test_validation.py
 pyproject.toml
 requirements.txt
@@ -86,6 +88,7 @@ requirements.txt
 - `loading.py` loads raw data from explicit filesystem paths.
 - `pipeline.py` orchestrates validation, transformations, and Parquet output.
 - `preprocessing.py` contains reusable, stateless transformations.
+- `squad_profiling.py` selects club squads and builds positional and team profiles.
 - `validation.py` enforces raw and processed data contracts.
 
 ## Installation

@@ -23,6 +23,7 @@ from ea_fc_cm_recommender.schema import (
     DETAILED_ATTRIBUTE_COLUMNS,
     EXCLUDED_COLUMNS,
     NULLABLE_INTEGER_COLUMNS,
+    PLAYER_POSITION_ORDER,
     PROCESSED_PLAYER_COLUMNS,
     REQUIRED_INTEGER_COLUMNS,
     TEXT_COLUMNS,
@@ -327,6 +328,11 @@ def test_valid_player_positions_match_current_supported_schema():
         "CF",
         "ST",
     }
+
+
+def test_player_position_order_contains_each_valid_position_once():
+    assert len(PLAYER_POSITION_ORDER) == len(VALID_PLAYER_POSITIONS)
+    assert frozenset(PLAYER_POSITION_ORDER) == VALID_PLAYER_POSITIONS
 
 
 def test_parse_playstyles_normalizes_plus_and_preserves_names():
